@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h2>To Do List</h2>
+            <h4>Completed : <span id="completedTrack"></span></h4>
+        </div>
+        <div class="addTasks">
+            <label for="inputTask">Task:</label>
+            <input type="text" id="inputTask" placeholder="write your task">
+            <button onclick="addTask()">Add Task</button>
+        </div>
+        <div class="displayAssignedTask">
+            <h2>Assigned Tasks:</h2>
+            <div class="Assigned-responsive">
+                <table border="1px" id="showAssignedTasks"></table>
+            </div>
+        </div>
+        <div class="displayCompletedTask">
+            <h2>Completed Tasks:</h2>
+            <div class="completed-responsive">
+                <table border="1px" id="showCompletedTasks"></table>
+            </div>
+        </div>
+    </div>
+    <script>
+        let assignedTasks = []
+        let completedTasks = [];
+        let nextId=1;
+        function saveData(){
+            localStorage.setItem("assigned",JSON.stringify(assignedTasks));
+            localStorage.setItem("completed",JSON.stringify(completedTasks));
+            localStorage.setItem("nextId",JSON.stringify(nextId));
+        }
+        function loadData(){
+            assignedTasks = JSON.parse(localStorage.getItem('assigned')) || [];
+            completedTasks = JSON.parse(localStorage.getItem('completed')) || [];
+            nextId = JSON.parse(localStorage.getItem('nextId') || 1);
+        }
+        function addTask(){
+            let task = document.getElementById("inputTask").value.trim();
+            let taskObject = {id:nextId,task:task,completed:false};
+            nextId+=1;
+            assignedTasks.push(taskObject);
+            updateDisplay();
+        }
+        
+        function renderTable(displayArray,tableId,completed=false){
+            let table = document.getElementById(tableId);
+            table.innerHTML="";
+            if(displayArray.length==0){
+                table.innerHTML = `
+                    <h2>No Tasks to do:</h2>
+                `;
+            }
+            let tableHTML = `
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Task</th>
+                        ${completed? `<th>Completetion</th>`:""}
+                        ${completed? "":`<th>CheckBox</th>`}
+                        ${completed? "":`<th>Remove</th>`}
+
+                    </tr>    
+                </thead>
+                <tbody>
+            `;
+            displayArray.forEach(item=>{
+                tableHTML += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.task}</td>
+                        <td>${completed? `<input type="checkbox" checked onchange="toggleComplete(${item.id},this.checked)">`:`<input type="checkbox" onchange="toggleComplete(${item.id},this.checked)">`}</td>
+                        <td>${completed? "":`<button onclick="removeTask(${item.id})">Remove</button>`}</td>
+                    </tr>
+                `;
+            })
+            tableHTML += `</tbody>`;
+            table.innerHTML = tableHTML;
+        }
+        function updateDisplay(){
+            renderTable(assignedTasks,"showAssignedTasks");
+            renderTable(completedTasks,"showCompletedTasks",true);
+            document.getElementById("completedTrack").innerHTML = completedTasks.length;
+            saveData();
+        }
+
+        function toggleComplete(id ,isChecked){
+            if(isChecked){
+                let task = assignedTasks.find(i=>i.id === id);
+                completedTasks.push(task);
+                assignedTasks = assignedTasks.filter(t=>t.id !== id)
+            }else{
+                let ctask = completedTasks.find(i=>i.id===id);
+                assignedTasks.push(ctask);
+                completedTasks = completedTasks.filter(t=>t.id !== id); 
+            }
+            updateDisplay();
+        }
+
+        function removeTask(id){
+            assignedTasks = assignedTasks.filter(t=>t.id !== id);
+
+            updateDisplay();
+        }
+
+        loadData();
+        updateDisplay();
+    </script>
+</body>
+</html>
